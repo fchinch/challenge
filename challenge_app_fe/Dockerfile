@@ -1,0 +1,25 @@
+#create docker file with alpine
+FROM node:16-alpine as base
+
+WORKDIR /usr/src/app
+COPY ./package.json ./package-lock.json /usr/src/app/
+RUN npm install
+
+RUN apk add curl bash --no-cache && \
+	curl -sfL https://gobinaries.com/tj/node-prune | bash -s -- -b /usr/local/bin \
+
+WORKDIR /usr/src/app
+COPY . /usr/src/app
+RUN npm run build
+
+FROM node:16-slim
+
+WORKDIR /app
+COPY --from=base /usr/src/app/dist /app
+RUN npm install -g http-server
+
+EXPOSE 9012
+
+#ENTRYPOINT ["npm","prod"]
+CMD ["http-server", "-p", "9012"]
+
